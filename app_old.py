@@ -468,31 +468,15 @@ def create_enhanced_visualizations(event_df: pd.DataFrame, case_df: pd.DataFrame
     with col1:
         st.subheader("🔄 Activity Frequency Analysis")
         top_activities = activity_counts.head(10)
-        activity_df = pd.DataFrame({
-            'Rank': range(1, len(top_activities) + 1),
-            'Activity': top_activities.index,
-            'Occurrences': top_activities.values
-        })
-        st.dataframe(
-            activity_df,
-            hide_index=True,
-            use_container_width=True,
-            height=350
-        )
+        st.write("**Top 10 Most Frequent Activities:**")
+        for idx, (activity, count) in enumerate(top_activities.items(), 1):
+            st.write(f"{idx}. {activity}: {count} occurrences")
     
     with col2:
         st.subheader("⚠️ Bottleneck Detection")
-        bottleneck_df = pd.DataFrame({
-            'Rank': range(1, len(bottlenecks) + 1),
-            'Activity': bottlenecks.index,
-            'Avg Wait Time (hours)': [f"{hours:.1f}" for hours in bottlenecks.values]
-        })
-        st.dataframe(
-            bottleneck_df,
-            hide_index=True,
-            use_container_width=True,
-            height=350
-        )
+        st.write("**Top 5 Bottleneck Activities (Avg Wait Time):**")
+        for idx, (activity, hours) in enumerate(bottlenecks.items(), 1):
+            st.write(f"{idx}. {activity}: {hours:.1f} hours")
     
     # Row 2: Throughput and Resource Analysis
     col1, col2 = st.columns(2)
@@ -503,32 +487,19 @@ def create_enhanced_visualizations(event_df: pd.DataFrame, case_df: pd.DataFrame
         mean_val = case_times['throughput_days'].mean()
         min_val = case_times['throughput_days'].min()
         max_val = case_times['throughput_days'].max()
-        
-        stats_df = pd.DataFrame({
-            'Metric': ['Median', 'Mean', 'Minimum', 'Maximum'],
-            'Days': [f"{median_val:.1f}", f"{mean_val:.1f}", f"{min_val:.1f}", f"{max_val:.1f}"]
-        })
-        st.dataframe(
-            stats_df,
-            hide_index=True,
-            use_container_width=True,
-            height=180
-        )
+        st.write(f"**Statistics:**")
+        st.write(f"- Median: {median_val:.1f} days")
+        st.write(f"- Mean: {mean_val:.1f} days")
+        st.write(f"- Min: {min_val:.1f} days")
+        st.write(f"- Max: {max_val:.1f} days")
         st.bar_chart(case_times['throughput_days'].value_counts().sort_index().head(20))
     
     with col2:
         st.subheader("👥 Resource Workload Analysis")
-        resource_df = pd.DataFrame({
-            'Resource': resource_workload.index,
-            'Events': resource_workload.values,
-            'Percentage': [f"{(count / resource_workload.sum()) * 100:.1f}%" for count in resource_workload.values]
-        })
-        st.dataframe(
-            resource_df,
-            hide_index=True,
-            use_container_width=True,
-            height=350
-        )
+        st.write("**Event Distribution by Resource:**")
+        for resource, count in resource_workload.items():
+            percentage = (count / resource_workload.sum()) * 100
+            st.write(f"- {resource}: {count} events ({percentage:.1f}%)")
     
     # Row 3: Time-based Trends
     col1, col2 = st.columns(2)
@@ -709,36 +680,27 @@ def main():
                 st.dataframe(filtered_event_df.head(event_limit), use_container_width=True)
                 
                 st.subheader("💾 Download Data")
-                st.info(f"📊 Downloads include ALL data: {len(case_df)} cases and {len(event_df)} events (not limited by display filters)")
                 col1, col2 = st.columns(2)
                 
                 with col1:
                     case_buffer = io.BytesIO()
                     with pd.ExcelWriter(case_buffer, engine='openpyxl') as writer:
-                        # Download ALL cases, not just filtered/displayed ones
                         case_df.to_excel(writer, sheet_name='Cases', index=False)
                     case_buffer.seek(0)
-                    st.download_button(
-                        f"📥 Download ALL {len(case_df)} Cases (Excel)", 
-                        data=case_buffer,
-                        file_name=f"ocpm_cases_{process_config['case_id_prefix'].lower()}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True
-                    )
+                    st.download_button("📥 Download Case Table (Excel)", data=case_buffer,
+                                     file_name=f"ocpm_cases_{process_config['case_id_prefix'].lower()}.xlsx",
+                                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                     use_container_width=True)
                 
                 with col2:
                     event_buffer = io.BytesIO()
                     with pd.ExcelWriter(event_buffer, engine='openpyxl') as writer:
-                        # Download ALL events, not just filtered/displayed ones
                         event_df.to_excel(writer, sheet_name='Events', index=False)
                     event_buffer.seek(0)
-                    st.download_button(
-                        f"📥 Download ALL {len(event_df)} Events (Excel)", 
-                        data=event_buffer,
-                        file_name=f"ocpm_events_{process_config['case_id_prefix'].lower()}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True
-                    )
+                    st.download_button("📥 Download Event Log (Excel)", data=event_buffer,
+                                     file_name=f"ocpm_events_{process_config['case_id_prefix'].lower()}.xlsx",
+                                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                     use_container_width=True)
             else:
                 st.info("👈 Configure settings and click 'Generate Data' to begin!")
     
